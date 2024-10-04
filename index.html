@@ -14,54 +14,70 @@
         const body = document.body;
         const sourceDir = "https://api.github.com/repos/sourcecrowed/sourcecrowed.github.io/contents/Posts";
         
-        let latestPostYearDir = undefined;
-        let latestPostMonthDir = undefined;
-        let latestFile = undefined;
-
-        const postsDir = await(await fetch(sourceDir)).json();
-
-        //body.append(JSON.stringify(postsDir));
-        
-        // Grab latest post year dir
-        for (const dir of postsDir)
+        async function grabLatestPostYearDir()
         {
-            if (latestPostYearDir == undefined || dir.name > latestPostYearDir.name)
+            let latestPostYearDir = undefined;
+            const postsDir = await(await fetch(sourceDir)).json();
+    
+            for (const dir of postsDir)
             {
-                latestPostYearDir = dir;
+                if (latestPostYearDir == undefined || dir.name > latestPostYearDir.name)
+                {
+                    latestPostYearDir = dir;
+                }
             }
+
+            return latestPostYearDir;
         }
 
-        const monthsDir = await (await fetch(`${sourceDir}/${latestPostYearDir.name}`)).json();
-
-        // Grab latest post month dir
-        for (const dir of monthsDir)
+        async function grabLatestPostMonthDir(latestPostYearDir)
         {
-            if (latestPostMonthDir == undefined || dir.name > latestPostMonthDir.name)
+            let latestPostMonthDir = undefined;
+            const monthsDir = await (await fetch(`${sourceDir}/${latestPostYearDir.name}`)).json();
+
+            for (const dir of monthsDir)
             {
-                latestPostMonthDir = dir;
+                if (latestPostMonthDir == undefined || dir.name > latestPostMonthDir.name)
+                {
+                    latestPostMonthDir = dir;
+                }
             }
+
+            return latestPostMonthDir;
         }
 
-        const daysDir = await (await fetch(`${sourceDir}/${latestPostYearDir.name}/${latestPostMonthDir.name}`)).json();
-
-        // Grab latest post day file
-        for (const file of daysDir)
+        async function grabLatestFile(latestPostMonthDir)
         {
-            if (latestFile == undefined || file.name > latestFile.name)
+            let latestFile = undefined;
+            const daysDir = await (await fetch(`${sourceDir}/${latestPostYearDir.name}/${latestPostMonthDir.name}`)).json();
+
+            for (const file of daysDir)
             {
-                latestFile = file;
+                if (latestFile == undefined || file.name > latestFile.name)
+                {
+                    latestFile = file;
+                }
             }
+
+            return latestFile;
         }
-        
-        const latestPostHeader = document.createElement("h2");
-        latestPostHeader.append(
-            `Latest post from ${latestPostYearDir.name}/${latestPostMonthDir.name}/${latestFile.name.split(".")[0]}`);
+
+        const latestPostYearDir = await grabLatestPostYearDir();
+        const latestPostMonthDir = await grabLatestPostMonthDir(latestPostYearDir);
+        const latestFile = await grabLatestFile(latestPostMonthDir);
 
         const markdownText = await (await fetch(latestFile.download_url)).text();
         const md = markdownit();
         const renderedMarkdown = md.render(markdownText);
         const markdownElem = document.createElement("div");
-        markdownElem.innerHTML = renderedMarkdown;
+        markdownElem.innerHTML = `
+        <h2>
+            Latest post from ${latestPostYearDir.name}/${latestPostMonthDir.name}/${latestFile.name.split(".")[0]}
+        </h2>
+        <div class="post-date-separator"></div>
+        ${renderedMarkdown}
+        `;
+
         body.appendChild(markdownElem);
 
     })();
@@ -71,7 +87,12 @@
     body 
     {
         background-color: rgb(30, 30, 40);
-        color: rgb(200, 200, 200)
+        color: rgb(200, 200, 200);
+        margin-left: 50px;
+    }
+    .post-date-separator
+    {
+        border-top: 3px solid
     }
 </style>
 </html>
