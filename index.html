@@ -1,0 +1,69 @@
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ben / SourceCrowed Blog</title>
+</head>
+<body>
+</body>
+<script type="module" src="https://md-block.verou.me/md-block.js"></script>
+<script type="text/javascript">
+
+    (async () => 
+    {
+        const body = document.body;
+        const sourceDir = "https://api.github.com/repos/sourcecrowed/sourcecrowed.github.io/contents/Posts";
+        
+        let latestPostYearDir = undefined;
+        let latestPostMonthDir = undefined;
+        let latestFile = undefined;
+
+        const postsDir = await(await fetch(sourceDir)).json();
+
+        //body.append(JSON.stringify(postsDir));
+        
+        // Grab latest post year dir
+        for (const dir of postsDir)
+        {
+            if (latestPostYearDir == undefined || dir.name > latestPostYearDir.name)
+            {
+                latestPostYearDir = dir;
+            }
+        }
+
+        const monthsDir = await (await fetch(`${sourceDir}/${latestPostYearDir.name}`)).json();
+
+        // Grab latest post month dir
+        for (const dir of monthsDir)
+        {
+            if (latestPostMonthDir == undefined || dir.name > latestPostMonthDir.name)
+            {
+                latestPostMonthDir = dir;
+            }
+        }
+
+        const daysDir = await (await fetch(`${sourceDir}/${latestPostYearDir.name}/${latestPostMonthDir.name}`)).json();
+
+        // Grab latest post day file
+        for (const file of daysDir)
+        {
+            if (latestFile == undefined || file.name > latestFile.name)
+            {
+                latestFile = file;
+            }
+        }
+        
+        const latestPostHeader = document.createElement("h2");
+        latestPostHeader.append(
+            `Latest post from ${latestPostYearDir.name}/${latestPostMonthDir.name}/${latestFile.name.split(".")[0]}`);
+
+        const markdown = await (await fetch(latestFile.download_url)).text();
+        const markdownBlk = document.createElement("md-block");
+        markdownBlk.append(markdown);
+        body.appendChild(latestPostHeader);
+        body.appendChild(markdownBlk);
+
+    })();
+
+</script>
+</html>
